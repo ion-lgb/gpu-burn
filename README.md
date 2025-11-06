@@ -61,6 +61,10 @@ can be set to change the resulting image tag:
 
 `make IMAGE_NAME=myregistry.private.com/gpu-burn CUDA_VERSION=12.0.1 IMAGE_DISTRO=ubuntu22.04 image`
 
+CUDA 13 is supported as well:
+
+`make CUDA_VERSION=13.0.0 IMAGE_DISTRO=ubuntu22.04 image`
+
 # Usage
 
     GPU Burn

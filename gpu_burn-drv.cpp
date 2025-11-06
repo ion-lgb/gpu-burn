@@ -251,28 +251,17 @@ template <class T> class GPU_Test {
 
         checkError(cuFuncSetCacheConfig(d_function, CU_FUNC_CACHE_PREFER_L1),
                    "L1 config");
-        checkError(cuParamSetSize(d_function, __alignof(T *) +
-                                                  __alignof(int *) +
-                                                  __alignof(size_t)),
-                   "set param size");
-        checkError(cuParamSetv(d_function, 0, &d_Cdata, sizeof(T *)),
-                   "set param");
-        checkError(cuParamSetv(d_function, __alignof(T *), &d_faultyElemData,
-                               sizeof(T *)),
-                   "set param");
-        checkError(cuParamSetv(d_function, __alignof(T *) + __alignof(int *),
-                               &d_iters, sizeof(size_t)),
-                   "set param");
-
-        checkError(cuFuncSetBlockShape(d_function, g_blockSize, g_blockSize, 1),
-                   "set block size");
+        d_gridDimX = SIZE / g_blockSize;
+        d_gridDimY = SIZE / g_blockSize;
     }
 
     void compare() {
+        void *kernelParams[] = {&d_Cdata, &d_faultyElemData, &d_iters};
         checkError(cuMemsetD32Async(d_faultyElemData, 0, 1, 0), "memset");
-        checkError(cuLaunchGridAsync(d_function, SIZE / g_blockSize,
-                                     SIZE / g_blockSize, 0),
-                   "Launch grid");
+        checkError(cuLaunchKernel(d_function, d_gridDimX, d_gridDimY, 1,
+                                  g_blockSize, g_blockSize, 1, 0, 0,
+                                  kernelParams, nullptr),
+                   "Launch kernel");
         checkError(cuMemcpyDtoHAsync(d_faultyElemsHost, d_faultyElemData,
                                      sizeof(int), 0),
                    "Read faultyelemdata");
@@ -304,6 +293,8 @@ template <class T> class GPU_Test {
     int *d_faultyElemsHost;
 
     cublasHandle_t d_cublas;
+    unsigned int d_gridDimX;
+    unsigned int d_gridDimY;
 };
 
 // Returns the number of devices
